@@ -25,7 +25,7 @@ SECRET_KEY = '0t(_)+!6kr=wy&p^&9j2drjlzg+fg)twl(@@*3snn000yx1+q('
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost']
 
 
 # Application definition
@@ -37,6 +37,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'django_celery_beat',
+    'django_celery_results',
+    #app
+    'currency_predictor'
 ]
 
 MIDDLEWARE = [
@@ -75,8 +80,12 @@ WSGI_APPLICATION = 'real_time_API_currency_predictor.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres',
+        'HOST': 'postgres',
+        'PORT': '5432',
     }
 }
 
@@ -118,3 +127,33 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+CELERY_BROKER_URL = 'pyamqp://rabbitmq:5672'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_BEAT_SCHEDULE = {
+    'add_data_to_databse_dolar': {
+        'task': 'get_currency_data_dolar',
+        'schedule': 60
+    },
+    'fit_model_dolar': {
+        'task': 'fit_time_series_model_dolar',
+        'schedule': 900,
+    },
+    'optimize_model_dolar': {
+        'task': 'optimize_model_dolar',
+        'schedule': 3780,
+    },
+
+    'add_data_to_databse_funt': {
+        'task': 'get_currency_data_funt',
+        'schedule': 60
+    },
+    'fit_model_funt': {
+        'task': 'fit_time_series_model_funt',
+        'schedule': 900,
+    },
+    'optimize_model_funt': {
+        'task': 'optimize_model_funt',
+        'schedule': 3780,
+    }
+}
