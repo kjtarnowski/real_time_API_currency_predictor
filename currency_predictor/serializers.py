@@ -1,15 +1,15 @@
 from rest_framework import serializers
 
-from real_time_API_currency_predictor.currency_predictor.models import EURUSD, EURGBP
+from real_time_API_currency_predictor.currency_predictor.models import DollarRates, PoundRates
 
 
 class EURUSDSerializer(serializers.ModelSerializer):
     class Meta:
-        model = EURUSD
+        model = DollarRates
         fields = '__all__'
 
 
 class EURGBPSerializer(serializers.ModelSerializer):
     class Meta:
-        model = EURGBP
+        model = PoundRates
         fields = '__all__'

@@ -2,7 +2,7 @@ from celery import shared_task
 
 from real_time_API_currency_predictor.currency_predictor.ML_predictor_utils import TuneReporterCallback, \
     CurrencyPredictor
-from real_time_API_currency_predictor.currency_predictor.models import EURUSD, EURGBP
+from real_time_API_currency_predictor.currency_predictor.models import DollarRates, PoundRates
 from real_time_API_currency_predictor.real_time_API_currency_predictor.settings import CURRENCY_PREDICTOR_COMMON_DICT, \
     BASED_HYPERFILE_FILE_NAME, BASED_SCALE_FILE_NAME, BASED_MODEL_ARCH_FILE_NAME, BASED_MODEL_WEIGHTS_FILE_NAME, URL
 
@@ -10,7 +10,7 @@ currency_predictor_dolar_euro_param_dict = {
     **CURRENCY_PREDICTOR_COMMON_DICT,
     'url': f"{URL}EURUSD",
     'currency_rate_name': 'EURUSD',
-    'currency_model': EURUSD,
+    'currency_model': DollarRates,
     'currency_field_name': 'dolar_to_euro_ratio',
     'currency_field_name_pred': 'dolar_to_euro_ratio_pred',
     'hyperparams_file': f"EURUSD{BASED_HYPERFILE_FILE_NAME}",
@@ -19,7 +19,6 @@ currency_predictor_dolar_euro_param_dict = {
     'model_weight_file': f"EURUSD{BASED_MODEL_WEIGHTS_FILE_NAME}",
     'callbacks': [TuneReporterCallback()]
 }
-
 
 dollar_predictor = CurrencyPredictor(**currency_predictor_dolar_euro_param_dict)
 
@@ -43,7 +42,7 @@ currency_predictor_pound_euro_param_dict = {
     **CURRENCY_PREDICTOR_COMMON_DICT,
     'url': f"{URL}EURGBP",
     'currency_rate_name': 'EURGBP',
-    'currency_model': EURGBP,
+    'currency_model': PoundRates,
     'hyperparams_file': f"EURGBP{BASED_HYPERFILE_FILE_NAME}",
     'scaler_file_name': f"EURGBP{BASED_SCALE_FILE_NAME}",
     'model_architecture_file': f"EURGBP{BASED_MODEL_ARCH_FILE_NAME}",
