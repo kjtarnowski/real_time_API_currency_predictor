@@ -168,7 +168,7 @@ class CurrencyPredictor:
     currency_field_name: str
     currency_field_name_pred: str
     n_points_model: int
-    n_points_predict: int
+    n_steps: int
     n_points_training: int
     callbacks: list
     train_model: Callable
@@ -239,7 +239,7 @@ class CurrencyPredictor:
 
     def load_model_and_scaler_scale_predict_data_inverse_scaling(self, data):
         scaler, loaded_model = self.load_scaler_model_architecture_and_weight()
-        hist_scaled = preprocess_time_series_data_one_sample_for_prediction(data, self.n_points_predict, scaler)
+        hist_scaled = preprocess_time_series_data_one_sample_for_prediction(data, self.n_steps, scaler)
         prediction_one_sample = loaded_model.predict(hist_scaled)
         prediction_one_sample_in_scale = scaler.inverse_transform(prediction_one_sample)
         return prediction_one_sample_in_scale
@@ -273,7 +273,6 @@ class CurrencyPredictor:
                                                                             (self.currency_field_name, currency_rate)
                                                                         ])
 
-
     def create_empty_currency_item_in_db_for_prediction_and_get_web_data_from_previous_point(self):
         self.currency_model.objects.create()
         n_points = self.currency_model.objects.all().count()
@@ -284,7 +283,7 @@ class CurrencyPredictor:
         self.create_empty_currency_item_in_db_for_prediction_and_get_web_data_from_previous_point()
         if self.is_enough_data_point_to_start_process(self.pred_fit_optim_time_offset_tuple[0]):
             data = \
-            self.get_last_n_points_data_from_db(self.n_points_predict+self.prediction_step)[:self.n_points_predict]
+            self.get_last_n_points_data_from_db(self.n_steps+self.prediction_step)[:self.n_steps]
             prediction_one_sample_in_scale = self.load_model_and_scaler_scale_predict_data_inverse_scaling(data)
         else:
             prediction_one_sample_in_scale = 0
@@ -295,12 +294,12 @@ class CurrencyPredictor:
                                                                         [(self.currency_field_name_pred,
                                                                          prediction_one_sample_in_scale)])
 
-    def fit_gru_keras_model_for_currency_data(self):
+    def fit_model_based_on_n_points_data(self):
         if self.is_enough_data_point_to_start_process(self.pred_fit_optim_time_offset_tuple[1]):
             data = self.get_last_n_points_data_from_db(self.n_points_model+self.prediction_step)[:self.n_points_model]
             data_train, data_test = self.split_data_to_train_and_test(data, self.n_points_training)
 
-            X_train, y_train, X_test, y_test, scaler = create_dataset(data_train, data_test, self.n_points_predict)
+            X_train, y_train, X_test, y_test, scaler = create_dataset(data_train, data_test, self.n_steps)
 
             best_params = self.load_hyperparams_from_file()
             model_params_dict, training_params_dict = self.separate_training_params_from_model_params(best_params)
@@ -325,6 +324,6 @@ class CurrencyPredictor:
             self.optimize_hyperparameters(self.train_model, self.create_model, data_train, data_test, self.search_space,
                                           self.model_kwargs_str, self.callbacks,
                                           self.hyperparams_file, self.random_seed, self.model_path, self.epochs,
-                                          self.n_points_predict, self.num_samples_optim)
+                                          self.n_steps, self.num_samples_optim)
         return self.currency_model
 

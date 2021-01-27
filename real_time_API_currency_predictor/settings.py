@@ -12,7 +12,12 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 
 from pathlib import Path
 
+from ray import tune
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+from real_time_API_currency_predictor.currency_predictor.ML_predictor_utils import create_model, \
+    optimize_hyperparameters, train_model
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -131,29 +136,63 @@ STATIC_URL = '/static/'
 CELERY_BROKER_URL = 'pyamqp://rabbitmq:5672'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BEAT_SCHEDULE = {
-    'add_data_to_databse_dolar': {
-        'task': 'get_currency_data_dolar',
+    'predict_and_get_currency_data_from_API_dollar': {
+        'task': 'predict_and_get_currency_data_from_API_dollar',
         'schedule': 60
     },
-    'fit_model_dolar': {
-        'task': 'fit_time_series_model_dolar',
+    'fit_time_series_model_dollar': {
+        'task': 'fit_time_series_model_dollar',
         'schedule': 900,
     },
-    'optimize_model_dolar': {
-        'task': 'optimize_model_dolar',
+    'optimize_time_series_model_dollar': {
+        'task': 'optimize_time_series_model_dollar',
         'schedule': 3780,
     },
 
-    'add_data_to_databse_funt': {
-        'task': 'get_currency_data_funt',
+    'predict_and_get_currency_data_from_API_pound': {
+        'task': 'predict_and_get_currency_data_from_API_pound',
         'schedule': 60
     },
-    'fit_model_funt': {
-        'task': 'fit_time_series_model_funt',
+    'fit_time_series_model_pound': {
+        'task': 'fit_time_series_model_pound',
         'schedule': 900,
     },
-    'optimize_model_funt': {
-        'task': 'optimize_model_funt',
+    'optimize_time_series_model_pound': {
+        'task': 'optimize_time_series_model_pound',
         'schedule': 3780,
+    },
+}
+
+URL = "https://www.freeforexapi.com/api/live?pairs="
+SEARCH_SPACE = {
+        "gru_units": tune.choice(list(range(20, 120))),
+        "rec_dropout": tune.uniform(0.0, 0.4),
+        "batch_size": tune.choice([8, 12, 16, 20, 24])
     }
+
+TRAINING_PARAMETER_LIST = ["batch_size"]
+BASED_HYPERFILE_FILE_NAME = "_current_optimized_hyerparams.json"
+BASED_SCALE_FILE_NAME = '_scaler.pkl'
+BASED_MODEL_ARCH_FILE_NAME = "_current_model_architecture.json"
+BASED_MODEL_WEIGHTS_FILE_NAME = "_current_model_weights.h5"
+
+CURRENCY_PREDICTOR_COMMON_DICT = {
+    'n_points_model': 180,
+    'n_points_training': 120,
+    'n_steps': 10,
+    'create_model': create_model,
+    'train_model': train_model,
+    'optimize_hyperparameters': optimize_hyperparameters,
+    'search_space': SEARCH_SPACE,
+    'model_kwargs_str': '{"gru_units": config["gru_units"],"rec_dropout": config["rec_dropout"]}',
+    'training_paramters_list': TRAINING_PARAMETER_LIST,
+    'epochs': 100,
+    'num_samples_optim': 5,
+    'random_seed': 42,
+    'model_path': "forexAPI/current_model/",
+    'pred_fit_optim_time_offset_tuple': (12, 10, 5),
+    'trials_to_get_data_from_API': 3,
+    'prediction_step': 1,
+    'currency_field_name': 'rate',
+    'currency_field_name_pred': 'rate_pred',
 }
