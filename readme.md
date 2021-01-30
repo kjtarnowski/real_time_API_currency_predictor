@@ -1,7 +1,7 @@
 # Currency predictor
 
 ## Summary:
-Application dedicated to perform periodic tasks:
+Prototype application dedicated to perform periodic tasks:
 - getting currency rates from web sources (web scraping or APIs) and storing in database
 - optimizing deep learning time series models (GRU - Gated recurrent unit) by the use of
 Ray Tune - hyperparameter tuning library
@@ -31,6 +31,16 @@ Application allows retrieving data via the REST API interface.
 ```
 docker-compose up -d --build
 ```
+
+## Comments
+Current prototype version of application takes currency rates 
+(euro/dolar and pound/dolar) from  
+https://www.investing.com/currencies/single-currency-crosses.
+The steps of fitting, optimizing and predicting the model are preceded by
+data collection stage (about 3.5 hours, celery web scraping task 
+performed every minute). After data gathering, prediction is
+executed every minute, fiting model is performed every 15 minutes,
+and model optimization is executed about every hour. 
 
 
 
