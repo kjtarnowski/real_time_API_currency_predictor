@@ -15,8 +15,12 @@ from pathlib import Path
 from ray import tune
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'. #real_time_API_currency_predictor
-from currency_predictor.ML_predictor_utils import create_model, optimize_hyperparameters, train_model, \
-webscrap_currency_data_bid_and_time_from_investing_com_bid
+from currency_predictor.ML_predictor_utils import (
+    create_model,
+    optimize_hyperparameters,
+    train_model,
+    webscrap_currency_data_bid_and_time_from_investing_com_bid,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,7 +30,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '0t(_)+!6kr=wy&p^&9j2drjlzg+fg)twl(@@*3snn000yx1+q('
+SECRET_KEY = "0t(_)+!6kr=wy&p^&9j2drjlzg+fg)twl(@@*3snn000yx1+q("
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -37,48 +41,48 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'rest_framework',
-    'django_celery_beat',
-    'django_celery_results',
-    #app
-    'currency_predictor'
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "rest_framework",
+    "django_celery_beat",
+    "django_celery_results",
+    # app
+    "currency_predictor",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'real_time_API_currency_predictor.urls'
+ROOT_URLCONF = "real_time_API_currency_predictor.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'real_time_API_currency_predictor.wsgi.application'
+WSGI_APPLICATION = "real_time_API_currency_predictor.wsgi.application"
 
 
 # Database
@@ -101,16 +105,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -118,9 +122,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -132,68 +136,67 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 
-CELERY_BROKER_URL = 'pyamqp://rabbitmq:5672'
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_BROKER_URL = "pyamqp://rabbitmq:5672"
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_BEAT_SCHEDULE = {
-    'predict_and_get_currency_data_from_web_euro': {
-        'task': 'predict_and_get_currency_data_from_web_euro',
-        'schedule': 60
+    "predict_and_get_currency_data_from_web_euro": {
+        "task": "predict_and_get_currency_data_from_web_euro",
+        "schedule": 60,
     },
-    'fit_time_series_model_euro': {
-        'task': 'fit_time_series_model_euro',
-        'schedule': 900,
+    "fit_time_series_model_euro": {
+        "task": "fit_time_series_model_euro",
+        "schedule": 900,
     },
-    'optimize_time_series_model_euro': {
-        'task': 'optimize_time_series_model_europip',
-        'schedule': 3780,
+    "optimize_time_series_model_euro": {
+        "task": "optimize_time_series_model_europip",
+        "schedule": 3780,
     },
-
-    'predict_and_get_currency_data_from_web_pound': {
-        'task': 'predict_and_get_currency_data_from_web_pound',
-        'schedule': 60
+    "predict_and_get_currency_data_from_web_pound": {
+        "task": "predict_and_get_currency_data_from_web_pound",
+        "schedule": 60,
     },
-    'fit_time_series_model_pound': {
-        'task': 'fit_time_series_model_pound',
-        'schedule': 900,
+    "fit_time_series_model_pound": {
+        "task": "fit_time_series_model_pound",
+        "schedule": 900,
     },
-    'optimize_time_series_model_pound': {
-        'task': 'optimize_time_series_model_pound',
-        'schedule': 3780,
+    "optimize_time_series_model_pound": {
+        "task": "optimize_time_series_model_pound",
+        "schedule": 3780,
     },
 }
 
 
 SEARCH_SPACE = {
-        "gru_units": tune.choice(list(range(20, 120))),
-        "rec_dropout": tune.uniform(0.0, 0.4),
-        "batch_size": tune.choice([8, 12, 16, 20, 24])
-    }
+    "gru_units": tune.choice(list(range(20, 120))),
+    "rec_dropout": tune.uniform(0.0, 0.4),
+    "batch_size": tune.choice([8, 12, 16, 20, 24]),
+}
 
 TRAINING_PARAMETER_LIST = ["batch_size"]
 
 CURRENCY_PREDICTOR_COMMON_DICT = {
-    #data_from_web
-    'get_currency_data': webscrap_currency_data_bid_and_time_from_investing_com_bid,
-    'pred_fit_optim_time_offset_tuple': (12, 10, 5),
-    #fiting_predicting
-    'n_points_model': 180,
-    'n_points_training': 120,
-    'n_steps': 10,
-    'create_model': create_model,
-    'epochs': 100,
-    'prediction_step': 1,
-    #model_optim
-    'train_model': train_model,
-    'optimize_hyperparameters': optimize_hyperparameters,
-    'search_space': SEARCH_SPACE,
-    'model_kwargs_str': '{"gru_units": config["gru_units"],"rec_dropout": config["rec_dropout"]}',
-    'training_paramters_list': TRAINING_PARAMETER_LIST,
-    'num_samples_optim': 5,
-    'random_seed': 42,
-    #data
-    'model_path': "current_model/",
-    'currency_field_name': 'rate',
-    'currency_field_name_pred': 'rate_pred',
+    # data_from_web
+    "get_currency_data": webscrap_currency_data_bid_and_time_from_investing_com_bid,
+    "pred_fit_optim_time_offset_tuple": (12, 10, 5),
+    # fiting_predicting
+    "n_points_model": 180,
+    "n_points_training": 120,
+    "n_steps": 10,
+    "create_model": create_model,
+    "epochs": 100,
+    "prediction_step": 1,
+    # model_optim
+    "train_model": train_model,
+    "optimize_hyperparameters": optimize_hyperparameters,
+    "search_space": SEARCH_SPACE,
+    "model_kwargs_str": '{"gru_units": config["gru_units"],"rec_dropout": config["rec_dropout"]}',
+    "training_paramters_list": TRAINING_PARAMETER_LIST,
+    "num_samples_optim": 5,
+    "random_seed": 42,
+    # data
+    "model_path": "current_model/",
+    "currency_field_name": "rate",
+    "currency_field_name_pred": "rate_pred",
 }

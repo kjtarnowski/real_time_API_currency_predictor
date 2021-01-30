@@ -13,5 +13,3 @@ class PoundRates(models.Model):
     time = models.TimeField(blank=True, null=True)
     time_pred = models.TimeField(auto_now_add=True, blank=True, null=True)
     rate_pred = models.FloatField(blank=True, null=True)
-
-

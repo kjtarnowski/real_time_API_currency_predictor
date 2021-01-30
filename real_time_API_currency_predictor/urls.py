@@ -19,7 +19,7 @@ from django.urls import path
 from currency_predictor.views import ListEuroRatesView, ListPoundRatesView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('predictor/EURUSD', ListEuroRatesView.as_view()),
-    path('predictor/GBPUSD', ListPoundRatesView.as_view()),
+    path("admin/", admin.site.urls),
+    path("predictor/EURUSD", ListEuroRatesView.as_view()),
+    path("predictor/GBPUSD", ListPoundRatesView.as_view()),
 ]

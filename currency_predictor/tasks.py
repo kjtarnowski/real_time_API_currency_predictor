@@ -1,16 +1,15 @@
 from celery import shared_task
 
-from currency_predictor.ML_predictor_utils import TuneReporterCallback, \
-    CurrencyPredictor
+from currency_predictor.ML_predictor_utils import TuneReporterCallback, CurrencyPredictor
 from currency_predictor.models import EuroRates, PoundRates
 from real_time_API_currency_predictor.settings import CURRENCY_PREDICTOR_COMMON_DICT
 
 currency_predictor_euro_dolar_param_dict = {
     **CURRENCY_PREDICTOR_COMMON_DICT,
-    'currency_model': EuroRates,
-    'callbacks': [TuneReporterCallback()],
-    'get_currency_data_kwargs_dict': {"currency_position_in_web_site": 0},
-    'currency_code': "EURUSD"
+    "currency_model": EuroRates,
+    "callbacks": [TuneReporterCallback()],
+    "get_currency_data_kwargs_dict": {"currency_position_in_web_site": 0},
+    "currency_code": "EURUSD",
 }
 
 euro_predictor = CurrencyPredictor(**currency_predictor_euro_dolar_param_dict)
@@ -33,10 +32,10 @@ def optimize_time_series_model_euro():
 
 currency_predictor_pound_dollar_param_dict = {
     **CURRENCY_PREDICTOR_COMMON_DICT,
-    'currency_model': PoundRates,
-    'callbacks': [TuneReporterCallback()],
-    'get_currency_data_kwargs_dict': {"currency_position_in_web_site": 1},
-    'currency_code': "GBPUSD"
+    "currency_model": PoundRates,
+    "callbacks": [TuneReporterCallback()],
+    "get_currency_data_kwargs_dict": {"currency_position_in_web_site": 1},
+    "currency_code": "GBPUSD",
 }
 
 pound_predictor = CurrencyPredictor(**currency_predictor_pound_dollar_param_dict)
