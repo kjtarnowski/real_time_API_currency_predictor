@@ -9,14 +9,15 @@ https://docs.djangoproject.com/en/3.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 from ray import tune
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-from real_time_API_currency_predictor.currency_predictor.ML_predictor_utils import create_model, \
-    optimize_hyperparameters, train_model
+# Build paths inside the project like this: BASE_DIR / 'subdir'. #real_time_API_currency_predictor
+from currency_predictor.ML_predictor_utils import create_model, optimize_hyperparameters, train_model, \
+webscrap_currency_data_bid_and_time_from_investing_com_bid
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -30,7 +31,7 @@ SECRET_KEY = '0t(_)+!6kr=wy&p^&9j2drjlzg+fg)twl(@@*3snn000yx1+q('
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -84,13 +85,13 @@ WSGI_APPLICATION = 'real_time_API_currency_predictor.wsgi.application'
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': 'postgres',
-        'PORT': '5432',
+    "default": {
+        "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.postgresql"),
+        "NAME": os.environ.get("SQL_DATABASE", "postgres"),
+        "USER": os.environ.get("SQL_USER", "postgres"),
+        "PASSWORD": os.environ.get("SQL_PASSWORD", "postgres"),
+        "HOST": os.environ.get("SQL_HOST", "postgres"),
+        "PORT": os.environ.get("SQL_PORT", "5432"),
     }
 }
 
@@ -136,21 +137,21 @@ STATIC_URL = '/static/'
 CELERY_BROKER_URL = 'pyamqp://rabbitmq:5672'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BEAT_SCHEDULE = {
-    'predict_and_get_currency_data_from_API_dollar': {
-        'task': 'predict_and_get_currency_data_from_API_dollar',
+    'predict_and_get_currency_data_from_web_euro': {
+        'task': 'predict_and_get_currency_data_from_web_euro',
         'schedule': 60
     },
-    'fit_time_series_model_dollar': {
-        'task': 'fit_time_series_model_dollar',
+    'fit_time_series_model_euro': {
+        'task': 'fit_time_series_model_euro',
         'schedule': 900,
     },
-    'optimize_time_series_model_dollar': {
-        'task': 'optimize_time_series_model_dollar',
+    'optimize_time_series_model_euro': {
+        'task': 'optimize_time_series_model_europip',
         'schedule': 3780,
     },
 
-    'predict_and_get_currency_data_from_API_pound': {
-        'task': 'predict_and_get_currency_data_from_API_pound',
+    'predict_and_get_currency_data_from_web_pound': {
+        'task': 'predict_and_get_currency_data_from_web_pound',
         'schedule': 60
     },
     'fit_time_series_model_pound': {
@@ -163,7 +164,7 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
-URL = "https://www.freeforexapi.com/api/live?pairs="
+
 SEARCH_SPACE = {
         "gru_units": tune.choice(list(range(20, 120))),
         "rec_dropout": tune.uniform(0.0, 0.4),
@@ -171,28 +172,28 @@ SEARCH_SPACE = {
     }
 
 TRAINING_PARAMETER_LIST = ["batch_size"]
-BASED_HYPERFILE_FILE_NAME = "_current_optimized_hyerparams.json"
-BASED_SCALE_FILE_NAME = '_scaler.pkl'
-BASED_MODEL_ARCH_FILE_NAME = "_current_model_architecture.json"
-BASED_MODEL_WEIGHTS_FILE_NAME = "_current_model_weights.h5"
 
 CURRENCY_PREDICTOR_COMMON_DICT = {
+    #data_from_web
+    'get_currency_data': webscrap_currency_data_bid_and_time_from_investing_com_bid,
+    'pred_fit_optim_time_offset_tuple': (12, 10, 5),
+    #fiting_predicting
     'n_points_model': 180,
     'n_points_training': 120,
     'n_steps': 10,
     'create_model': create_model,
+    'epochs': 100,
+    'prediction_step': 1,
+    #model_optim
     'train_model': train_model,
     'optimize_hyperparameters': optimize_hyperparameters,
     'search_space': SEARCH_SPACE,
     'model_kwargs_str': '{"gru_units": config["gru_units"],"rec_dropout": config["rec_dropout"]}',
     'training_paramters_list': TRAINING_PARAMETER_LIST,
-    'epochs': 100,
     'num_samples_optim': 5,
     'random_seed': 42,
-    'model_path': "forexAPI/current_model/",
-    'pred_fit_optim_time_offset_tuple': (12, 10, 5),
-    'trials_to_get_data_from_API': 3,
-    'prediction_step': 1,
+    #data
+    'model_path': "current_model/",
     'currency_field_name': 'rate',
     'currency_field_name_pred': 'rate_pred',
 }

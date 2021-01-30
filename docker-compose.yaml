@@ -9,7 +9,7 @@ services:
     networks:
       - main
     ports:
-      - "5672:5672"
+      - "9672:5672"
     restart: on-failure
 
   postgres:
@@ -23,28 +23,35 @@ services:
     networks:
       - main
     ports:
-      - "5432:5432"
+      - "9432:5432"
     restart: on-failure
     volumes:
       - postgresql-data:/var/lib/postgresql/data
 
   app:
     build: .
-    command: sh -c "wait-for postgres:5432 && python manage.py collectstatic --no-input && python manage.py migrate && gunicorn mysite.wsgi -b 0.0.0.0:8000"
+    shm_size: '512mb'
+    command: python manage.py runserver 0.0.0.0:8000
     container_name: app
+    env_file:
+      - ./.env.dev
     depends_on:
       - postgres
       - rabbitmq
-    expose:
-      - "8000"
+    ports:
+      - "8000:8000"
     hostname: app
     image: app-image
     networks:
       - main
     restart: on-failure
+    volumes:
+      - .:/usr/src/app
+
+
 
   celery_worker:
-    command: sh -c "wait-for rabbitmq:5672 && wait-for app:8000 -- celery -A mysite worker -l info"
+    command: ./run_celery.sh 
     container_name: celery_worker
     depends_on:
       - app
@@ -54,21 +61,16 @@ services:
       replicas: 2
       restart_policy:
         condition: on-failure
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 50M
-        reservations:
-          cpus: '0.25'
-          memory: 20M
     hostname: celery_worker
     image: app-image
     networks:
       - main
     restart: on-failure
+    volumes:
+      - .:/usr/src/app
 
   celery_beat:
-    command: sh -c "wait-for rabbitmq:5672 && wait-for app:8000 -- celery -A mysite beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+    command: ./run_celery_beat.sh
     container_name: celery_beat
     depends_on:
       - app
@@ -79,6 +81,8 @@ services:
     networks:
       - main
     restart: on-failure
+    volumes:
+      - .:/usr/src/app
 
 networks:
   main:

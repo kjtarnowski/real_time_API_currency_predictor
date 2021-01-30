@@ -1,14 +1,14 @@
 from rest_framework import generics
 
-from real_time_API_currency_predictor.currency_predictor.models import DollarRates, PoundRates
-from real_time_API_currency_predictor.currency_predictor.serializers import EURUSDSerializer, EURGBPSerializer
+from currency_predictor.models import EuroRates, PoundRates
+from currency_predictor.serializers import EuroRatesSerializer, PoundRatesSerializer
 
 
-class ListCurrencyEURUSDView(generics.ListAPIView):
-    queryset = DollarRates.objects.all()
-    serializer_class = EURUSDSerializer
+class ListEuroRatesView(generics.ListAPIView):
+    queryset = EuroRates.objects.all()
+    serializer_class = EuroRatesSerializer
 
 
-class ListCurrencyEURGBPView(generics.ListAPIView):
+class ListPoundRatesView(generics.ListAPIView):
     queryset = PoundRates.objects.all()
-    serializer_class = EURGBPSerializer
+    serializer_class = PoundRatesSerializer

@@ -16,10 +16,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from real_time_API_currency_predictor.currency_predictor.views import ListCurrencyEURUSDView, ListCurrencyEURGBPView
+from currency_predictor.views import ListEuroRatesView, ListPoundRatesView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('predictor/EURUSD', ListCurrencyEURUSDView.as_view()),
-    path('predictor/EURGBP', ListCurrencyEURGBPView.as_view()),
+    path('predictor/EURUSD', ListEuroRatesView.as_view()),
+    path('predictor/GBPUSD', ListPoundRatesView.as_view()),
 ]

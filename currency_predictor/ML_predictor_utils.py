@@ -1,12 +1,14 @@
 import os
+import shutil
 import tempfile
 import json
-import requests
 from datetime import datetime
 from typing import Callable, Dict, List, Tuple
 from dataclasses import dataclass
+from urllib.request import urlopen, Request
 
 
+from bs4 import BeautifulSoup
 import joblib
 import numpy as np
 import pandas as pd
@@ -24,6 +26,15 @@ from ray.tune.suggest import ConcurrencyLimiter
 
 from django.db import models
 
+
+def webscrap_currency_data_bid_and_time_from_investing_com_bid(currency_position_in_web_site):
+    req = Request('https://www.investing.com/currencies/single-currency-crosses', headers={'User-Agent': 'Mozilla/5.0'})
+    html = urlopen(req).read()
+    bs = BeautifulSoup(html, 'html.parser')
+    currency = bs.find("tbody").find_all("tr")[currency_position_in_web_site]
+    bid = currency.find("td", class_=f"pid-{currency_position_in_web_site+1}-bid").text
+    time = datetime.utcnow().replace(microsecond=0).time()
+    return bid, time
 
 def scale_and_reshape_data(data, scaler=None):
     if not scaler:
@@ -121,7 +132,7 @@ def train_model(
 
 def optimize_hyperparameters(train_model, create_model, data_train, data_test, search_space, model_kwargs_str, callbacks,
                              hyperparams_file_name, random_seed, model_path, epochs, n_steps, num_samples_optim):
-    f = tempfile.TemporaryDirectory(dir=os.getcwd())
+    tmp_dir = tempfile.TemporaryDirectory(dir=os.getcwd())
 
     ray.shutdown()
     ray.init(log_to_driver=False, local_mode=True)
@@ -149,11 +160,11 @@ def optimize_hyperparameters(train_model, create_model, data_train, data_test, s
         metric="val_loss",
         mode="min",
         name="ray_tune_keras_hyperopt_gru",
-        local_dir=f.name,
+        local_dir=tmp_dir.name,
         num_samples=num_samples_optim,
     )
 
-    f.cleanup()
+    shutil.rmtree(tmp_dir)
 
     best_params = analysis.get_best_config(metric="val_loss", mode="min")
     with open(os.path.join(model_path, hyperparams_file_name), 'w') as f:
@@ -162,8 +173,6 @@ def optimize_hyperparameters(train_model, create_model, data_train, data_test, s
 
 @dataclass
 class CurrencyPredictor:
-    url: str
-    currency_rate_name: str
     currency_model: models.Model
     currency_field_name: str
     currency_field_name_pred: str
@@ -181,13 +190,11 @@ class CurrencyPredictor:
     random_seed: int
     num_samples_optim: int
     model_path: str
-    hyperparams_file: str
-    scaler_file_name: str
-    model_architecture_file: str
-    model_weight_file: str
     pred_fit_optim_time_offset_tuple: Tuple[int, int, int]
-    trials_to_get_data_from_API: int
     prediction_step: int
+    get_currency_data: Callable
+    get_currency_data_kwargs_dict: dict
+    currency_code: str
 
 
     def get_last_n_points_data_from_db(self, n_points):
@@ -200,31 +207,35 @@ class CurrencyPredictor:
         return data
 
     def load_hyperparams_from_file(self):
-        with open(os.path.join(self.model_path, self.hyperparams_file), 'r') as f:
+        with open(os.path.join(self.model_path, f"{self.currency_code}_current_optimized_hyerparams.json"), 'r') as f:
             best_params = json.load(f)
         return best_params
 
-    def separate_training_params_from_model_params(self, model_params):
+    def separate_training_params_from_model_params(self, params):
         training_params = {}
-        for param in self.training_paramters_list:
-            training_params[param] = model_params.pop()
+        model_params = {}
+        for k, v in params.items():
+            if k in self.training_paramters_list:
+                training_params[k] = v
+            else:
+                model_params[k] = v
         return model_params, training_params
 
     def save_scaler_model_architecture_and_weight(self, model, scaler):
-        joblib.dump(scaler, os.path.join(self.model_path, self.scaler_file_name))
+        joblib.dump(scaler, os.path.join(self.model_path, f"{self.currency_code}_current_scaler.pkl"))
         model_json = model.to_json()
-        with open(os.path.join(self.model_path, self.model_architecture_file), "w") as json_file:
+        with open(os.path.join(self.model_path, f"{self.currency_code}_current_model_architecture.json"), "w") as json_file:
             json_file.write(model_json)
-        model.save_weights(os.path.join(self.model_path, self.model_weight_file))
+        model.save_weights(os.path.join(self.model_path, f"{self.currency_code}_current_model_weights.h5"))
 
     def load_scaler_model_architecture_and_weight(self):
-        scaler = joblib.load(os.path.join(self.model_path, self.scaler_file_name))
+        scaler = joblib.load(os.path.join(self.model_path, f"{self.currency_code}_current_scaler.pkl"))
 
-        with open(os.path.join(self.model_path, self.model_architecture_file), 'r') as json_file:
+        with open(os.path.join(self.model_path, f"{self.currency_code}_current_model_architecture.json"), 'r') as json_file:
             loaded_model_json = json_file.read()
 
         loaded_model = keras.models.model_from_json(loaded_model_json)
-        loaded_model.load_weights(os.path.join(self.model_path, self.model_weight_file))
+        loaded_model.load_weights(os.path.join(self.model_path, f"{self.currency_code}_current_model_weights.h5"))
 
         return scaler, loaded_model
 
@@ -249,27 +260,14 @@ class CurrencyPredictor:
             setattr(obj, tup[0], tup[1])
         obj.save()
 
-    def get_currency_data_time_rate_tuple_from_API(self, trials):
-        currency_rate, time_using_API = None, None
-        while trials:
-            r = requests.get(self.url)
-            if r.status_code == 200:
-                response_data_json = r.json()
-                currency_rate = response_data_json['rates'][self.currency_rate_name]['rate']
-                time_using_API = datetime.fromtimestamp(
-                    response_data_json['rates'][self.currency_rate_name]['timestamp'])
-                break
-            else:
-                trials -= 1
-            return currency_rate, time_using_API
 
-    def get_currency_data_from_API_save_in_db(self, offset, trials):
+    def get_currency_data_from_web_save_in_db(self, offset):
         obj = self.currency_model.objects.all().order_by('-id')[offset]
-        currency_rate, time_using_API = self.get_currency_data_time_rate_tuple_from_API(trials)
+        currency_rate, time_getting_data = self.get_currency_data(**self.get_currency_data_kwargs_dict)
 
         self.save_model_object_attr_in_db_from_list_of_tuples_name_attr(obj,
                                                                         [
-                                                                            ("time", time_using_API),
+                                                                            ("time", time_getting_data),
                                                                             (self.currency_field_name, currency_rate)
                                                                         ])
 
@@ -277,9 +275,9 @@ class CurrencyPredictor:
         self.currency_model.objects.create()
         n_points = self.currency_model.objects.all().count()
         if n_points > 1:
-            self.get_currency_data_from_API_save_in_db(self.prediction_step, self.trials_to_get_data_from_API)
+            self.get_currency_data_from_web_save_in_db(self.prediction_step)
 
-    def predict_value_based_on_last_n_values_add_prediction_and_real_data_from_API_to_db(self):
+    def predict_value_based_on_last_n_values_add_prediction_and_real_data_from_web_to_db(self):
         self.create_empty_currency_item_in_db_for_prediction_and_get_web_data_from_previous_point()
         if self.is_enough_data_point_to_start_process(self.pred_fit_optim_time_offset_tuple[0]):
             data = \
@@ -293,6 +291,7 @@ class CurrencyPredictor:
         self.save_model_object_attr_in_db_from_list_of_tuples_name_attr(obj,
                                                                         [(self.currency_field_name_pred,
                                                                          prediction_one_sample_in_scale)])
+        print(data)
 
     def fit_model_based_on_n_points_data(self):
         if self.is_enough_data_point_to_start_process(self.pred_fit_optim_time_offset_tuple[1]):
@@ -321,9 +320,10 @@ class CurrencyPredictor:
             data = self.get_last_n_points_data_from_db(self.n_points_model+self.prediction_step)[:self.n_points_model]
             data_train, data_test = self.split_data_to_train_and_test(data, self.n_points_training)
 
+            hyperparams_file = f"{self.currency_code}_current_optimized_hyerparams.json"
+
             self.optimize_hyperparameters(self.train_model, self.create_model, data_train, data_test, self.search_space,
                                           self.model_kwargs_str, self.callbacks,
-                                          self.hyperparams_file, self.random_seed, self.model_path, self.epochs,
+                                          hyperparams_file, self.random_seed, self.model_path, self.epochs,
                                           self.n_steps, self.num_samples_optim)
         return self.currency_model
-

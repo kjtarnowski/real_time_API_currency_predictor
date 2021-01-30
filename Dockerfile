@@ -1,16 +1,19 @@
-FROM python:3-alpine
+FROM python:3.7-slim-buster
 
 # Install dependencies required for psycopg2 python package
-RUN apk update && apk add libpq
-RUN apk update && apk add --virtual .build-deps gcc python3-dev musl-dev postgresql-dev 
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y netcat-openbsd gcc python3-dev musl-dev libpq-dev libboost-all-dev && \
+    apt-get clean
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 COPY . .
-RUN mv wait-for /bin/wait-for
 
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Remove dependencies only required for psycopg2 build
-RUN apk del .build-deps
+
+# run entrypoint.sh
+ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
 
