@@ -36,7 +36,7 @@ docker-compose up -d --build
 Current prototype version of application takes currency rates 
 (euro/dollar and pound/dollar) from  
 https://www.investing.com/currencies/single-currency-crosses.
-The steps of fitting, optimizing and predicting the model are preceded by
+The steps of fitting, optimizing and predicting are preceded by
 data collection stage (about 3.5 hours, celery web scraping task 
 performed every minute). After data gathering, prediction is
 executed every minute, fitting model is performed every 15 minutes,
